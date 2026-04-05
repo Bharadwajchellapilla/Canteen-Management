@@ -3,7 +3,7 @@ import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
-// Vercel Environment Variables ni use chesthunnam
+// Vercel Dashboard lo nuvvu add chesina Variables ni ikkada connect chesthunnam
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -17,7 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Exports
+// Database, Auth, and Storage instances
 export const database = getDatabase(app);
 export const auth = getAuth(app); 
 export const storage = getStorage(app);
