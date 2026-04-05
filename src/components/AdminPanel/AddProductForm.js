@@ -1,111 +1,123 @@
 import React, { useState } from "react";
-import { Card, Form, Button } from "react-bootstrap";
-import { ref, push } from "firebase/database";
-import { database } from "../../firebase";
+import { Card, Form, Button, Spinner } from "react-bootstrap";
+import { ref as dbRef, push } from "firebase/database";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Storage refs
+import { database, storage } from "../../firebase"; // Don't forget to import storage
 
 const AddProductForm = () => {
-  const [initialPrices, setInitialPrices] = useState("");
   const [productName, setProductName] = useState("");
+  const [initialPrices, setInitialPrices] = useState("");
   const [productPrice, setProductPrice] = useState("");
   const [productDescription, setProductDescription] = useState("");
-  const [productImage, setProductImage] = useState("");
+  const [imageFile, setImageFile] = useState(null); // URL badulu File object
+  const [loading, setLoading] = useState(false); // Uploading indicator
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    if (!imageFile) {
+      alert("Please select an image!");
+      return;
+    }
+
+    setLoading(true);
     try {
+      // 1. Image ni Firebase Storage ki upload cheyadam
+      const fileRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
+      await uploadBytes(fileRef, imageFile);
+      
+      // 2. Upload aina image URL ni pondhadam
+      const imageUrl = await getDownloadURL(fileRef);
+
+      // 3. Database lo product data save cheyadam
       const newProduct = {
         name: productName,
         initialPrices: parseFloat(initialPrices),
         price: parseFloat(productPrice),
         description: productDescription,
-        image: productImage,
+        image: imageUrl, // Ikada kotha URL pamaali
         quantity: 0,
       };
 
-      const productsRef = ref(database, "products");
+      const productsRef = dbRef(database, "products");
       await push(productsRef, newProduct);
 
-      // Reset the form
+      // Form Reset
       setProductName("");
       setInitialPrices("");
       setProductPrice("");
       setProductDescription("");
-      setProductImage("");
+      setImageFile(null);
+      document.getElementById("fileInput").value = ""; // Reset file input field
 
-      alert("Product added successfully!");
+      alert("Product added successfully with image!");
     } catch (error) {
       console.error("Error adding product:", error);
-      alert("Failed to add product. Please try again.");
+      alert("Failed to add product. Check if storage is exported!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Card className="mb-4">
-      <Card.Header>Add New Product</Card.Header>
+    <Card className="shadow-sm border-0 mb-4">
+      <Card.Header className="bg-primary text-white fw-bold">Add New Product</Card.Header>
       <Card.Body>
         <Form onSubmit={handleAddProduct}>
-          <Form.Group controlId="addProduct-name">
+          <Form.Group className="mb-3">
             <Form.Label>Product Name</Form.Label>
             <Form.Control
               type="text"
-              name="productName"
-              placeholder="Enter product name"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
               required
             />
           </Form.Group>
-          <Form.Group controlId="addProduct-initialPrice" className="mt-3">
-            <Form.Label>Initial Product Price (₹)</Form.Label>
-            <Form.Control
-              type="number"
-              name="initialPrice"
-              step="0.1"
-              min="0"
-              placeholder="Enter initial product price"
-              value={initialPrices}
-              onChange={(e) => setInitialPrices(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="addProduct-currentPrice" className="mt-3">
-            <Form.Label>Product Price (₹)</Form.Label>
-            <Form.Control
-              type="number"
-              name="currentPrice"
-              step="0.1"
-              min="0"
-              placeholder="Enter product price"
-              value={productPrice}
-              onChange={(e) => setProductPrice(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="addProduct-description" className="mt-3">
-            <Form.Label>Product Description</Form.Label>
+
+          <div className="d-flex gap-3 mb-3">
+            <Form.Group className="w-50">
+              <Form.Label>Initial Price (₹)</Form.Label>
+              <Form.Control
+                type="number"
+                value={initialPrices}
+                onChange={(e) => setInitialPrices(e.target.value)}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="w-50">
+              <Form.Label>Current Price (₹)</Form.Label>
+              <Form.Control
+                type="number"
+                value={productPrice}
+                onChange={(e) => setProductPrice(e.target.value)}
+                required
+              />
+            </Form.Group>
+          </div>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Description</Form.Label>
             <Form.Control
               as="textarea"
-              name="description"
-              rows={3}
-              placeholder="Enter product description"
+              rows={2}
               value={productDescription}
               onChange={(e) => setProductDescription(e.target.value)}
               required
             />
           </Form.Group>
-          <Form.Group controlId="addProduct-image" className="mt-3">
-            <Form.Label>Product Image URL</Form.Label>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Product Image (Select File)</Form.Label>
             <Form.Control
-              type="url"
-              name="imageUrl"
-              placeholder="Enter product image URL"
-              value={productImage}
-              onChange={(e) => setProductImage(e.target.value)}
+              id="fileInput"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files[0])}
               required
             />
           </Form.Group>
-          <Button variant="primary" type="submit" className="mt-4">
-            Add Product
+
+          <Button variant="primary" type="submit" className="w-100 py-2" disabled={loading}>
+            {loading ? <Spinner animation="border" size="sm" /> : "🚀 Add Product"}
           </Button>
         </Form>
       </Card.Body>
