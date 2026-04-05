@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { Container, Nav, Row, Col, Card } from "react-bootstrap";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Case-sensitive imports - Vercel build pass avvadaniki files names match chesa
+// ✅ FIXED CASE-SENSITIVE IMPORTS
+// Nuvvu rename chesina kotha file name 'UpdateQuantityForm' kabatti ikkada kuda adhe undali
 import AddProductForm from "./AddProductForm";
-import UpdateQuantity from "./UpdateQuantity"; // File name UpdateQuantity.js ayi undali
+import UpdateQuantity from "./UpdateQuantityForm"; 
 import OrderHistory from "./OrderHistory";
 import ChartComponent from "./ChartComponent";
 import SummaryComponent from "./SummaryComponent";
@@ -21,6 +22,7 @@ const AdminPanel = () => {
       case "chef":
         return <ChefDashboard />;
       case "inventory":
+        // Ikkada 'UpdateQuantity' component ni render chesthunnam
         return <UpdateQuantity />;
       case "add-product":
         return <AddProductForm />;
